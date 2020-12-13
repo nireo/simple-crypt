@@ -58,16 +58,6 @@ func decrypt(data []byte, passphrase string) []byte {
 	return plaintext
 }
 
-func encryptFile(filename string, data []byte, passphrase string) {
-	file, err := os.Create(filename)
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-
-	defer file.Close()
-	file.Write(encrypt(data, passphrase))
-}
-
 func encryptToDst(dst string, data []byte, key string) {
 	file, err := os.Create(dst)
 	if err != nil {
@@ -78,12 +68,23 @@ func encryptToDst(dst string, data []byte, key string) {
 	file.Write(encrypt(data, key))
 }
 
-func decryptFile(filename string, passphrase string) []byte {
-	data, _ := ioutil.ReadFile(filename)
-	return decrypt(data, passphrase)
+func decryptToDst(dst, src, key string) {
+	data, err := ioutil.ReadFile(src)
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+
+	decryptedData := decrypt(data, key)
+	if err := ioutil.WriteFile(dst, decryptedData, 0666); err != nil {
+		log.Fatal(err.Error())
+	}
 }
 
 func main() {
+	if len(os.Args) < 5 {
+		log.Fatal("You need to provide more os arguments | format: src dst key action")
+	}
+
 	srcDir := os.Args[1]
 	dstDir := os.Args[2]
 	encKey := os.Args[3]
@@ -114,5 +115,7 @@ func main() {
 		}
 
 		encryptToDst(dstDir, srcData, encKey)
+	} else {
+		decryptToDst(dstDir, srcDir, encKey)
 	}
 }
